@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1, user-scalable=no">
+    <title>Global Genetics MX - POS Premium</title>
+    
+    <!-- Fonts & Icons -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Libraries -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div id="app">
+        <!-- Navigation Bar (Bottom for Mobile First) -->
+        <nav class="bottom-nav">
+            <button class="nav-item active" onclick="goTo('home')" id="nav-home">
+                <i class="fas fa-home"></i>
+                <span>Inicio</span>
+            </button>
+            <button class="nav-item" onclick="goTo('sale')" id="nav-sale">
+                <i class="fas fa-cash-register"></i>
+                <span>Venta</span>
+            </button>
+            <button class="nav-item" onclick="goTo('inventory')" id="nav-inventory">
+                <i class="fas fa-boxes-stacked"></i>
+                <span>Stock</span>
+            </button>
+            <button class="nav-item" onclick="goTo('customer')" id="nav-customer">
+                <i class="fas fa-users"></i>
+                <span>Clientes</span>
+            </button>
+        </nav>
+
+        <!-- Main Content Screens -->
+        <main class="content-area">
+            
+            <!-- HOME SCREEN -->
+            <section id="home" class="screen active">
+                <header class="page-header">
+                    <div class="header-title">
+                        <img src="logo.svg" alt="Global Genetics MX" class="logo-small">
+                        <div>
+                            <h1>Global Genetics MX</h1>
+                            <p class="subtitle">Resumen de Negocio</p>
+                        </div>
+                    </div>
+                    <div class="header-actions">
+                        <button class="icon-btn" onclick="loadData()" title="Actualizar"><i class="fas fa-sync-alt"></i></button>
+                        <button class="icon-btn" id="notif-btn" onclick="toggleNotifications()" title="Notificaciones">
+                            <i class="fas fa-bell"></i>
+                            <span id="notif-badge" class="badge" style="display:none;">0</span>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- Notifications Area -->
+                <div id="notifications-panel" class="notifications-panel" style="display:none;">
+                    <div class="notifications-header">
+                        <h3>Notificaciones</h3>
+                        <button class="close-btn" onclick="toggleNotifications()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <div id="notifications-list" class="notifications-list">
+                        <!-- Dynamic notifications -->
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <span class="stat-label">Valor de Inventario</span>
+                        <h2 id="inventoryValue" class="stat-value">$0.00</h2>
+                        <i class="fas fa-wallet stat-icon"></i>
+                    </div>
+                    <div class="stat-card warning">
+                        <span class="stat-label">Bajo Stock</span>
+                        <h2 id="lowStockCount" class="stat-value">0</h2>
+                        <i class="fas fa-exclamation-triangle stat-icon"></i>
+                    </div>
+                    <div class="stat-card danger">
+                        <span class="stat-label">Sin Stock</span>
+                        <h2 id="outStockCount" class="stat-value">0</h2>
+                        <i class="fas fa-times-circle stat-icon"></i>
+                    </div>
+                </div>
+
+                <div class="chart-container card">
+                    <div class="card-header">
+                        <h3 id="chartTitle">Inversión por Producto</h3>
+                        <button class="text-btn" onclick="toggleChartMode()">
+                            <i class="fas fa-exchange-alt"></i> Cambiar Vista
+                        </button>
+                    </div>
+                    <div class="canvas-wrapper">
+                        <canvas id="chart"></canvas>
+                    </div>
+                    <div class="chart-pagination">
+                        <button class="pagination-btn" onclick="prevChartPage()" id="prev-page"><i class="fas fa-chevron-left"></i></button>
+                        <span id="page-info" class="page-info">1 / 1</span>
+                        <button class="pagination-btn" onclick="nextChartPage()" id="next-page"><i class="fas fa-chevron-right"></i></button>
+                    </div>
+                </div>
+
+                <div class="alerts-section">
+                    <h3>Alertas de Inventario</h3>
+                    <div id="inventoryAlerts" class="alerts-list">
+                        <div class="empty-state">No hay alertas críticas</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- SALE SCREEN -->
+            <section id="sale" class="screen">
+                <header class="page-header">
+                    <h1>Nueva Venta</h1>
+                </header>
+
+                <div class="form-group">
+                    <label>👤 Cliente</label>
+                    <div class="search-dropdown">
+                        <input type="text" id="customerSearch" placeholder="Buscar por nombre o RFC..." onkeyup="searchCustomers()" class="form-control">
+                        <div id="customerDropdown" class="dropdown-list" style="display:none;"></div>
+                    </div>
+                    <div id="selectedCustomer" class="selected-item" style="display:none;">
+                        <span id="customerName"></span>
+                        <button type="button" class="remove-btn" onclick="clearCustomer()">✕</button>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>💳 Método de Pago</label>
+                    <select id="paymentMethod" class="form-control">
+                        <option value="">Seleccionar...</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Credito">Crédito</option>
+                        <option value="Debito">Débito</option>
+                        <option value="Transferencia">Transferencia</option>
+                        <option value="Cheque">Cheque</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>📦 Agregar Producto</label>
+                    <div class="search-dropdown">
+                        <input type="text" id="productSearch" placeholder="Buscar producto..." onkeyup="searchProducts()" class="form-control">
+                        <div id="productDropdown" class="dropdown-list" style="display:none;"></div>
+                    </div>
+                </div>
+
+                <div class="cart-section card">
+                    <h3>🛒 Carrito de Compras</h3>
+                    <div id="cartItems" class="cart-items">
+                        <div class="empty-state">El carrito está vacío</div>
+                    </div>
+                </div>
+
+                <div class="totals-section card">
+                    <div class="total-row">
+                        <span>Subtotal</span>
+                        <span id="subtotal">$0.00</span>
+                    </div>
+                    <div class="total-row">
+                        <span>Descuento</span>
+                        <input type="number" id="discount" placeholder="$0.00" class="discount-input" onchange="calculateTotals()">
+                    </div>
+                    <div class="total-row">
+                        <span>IVA (16%)</span>
+                        <span id="iva">$0.00</span>
+                    </div>
+                    <div class="total-row total">
+                        <span>Total a Pagar</span>
+                        <span id="total">$0.00</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary btn-large" onclick="finalizeSale()">
+                    <i class="fas fa-check-circle"></i> FINALIZAR VENTA
+                </button>
+            </section>
+
+            <!-- INVENTORY SCREEN -->
+            <section id="inventory" class="screen">
+                <header class="page-header">
+                    <h1>Inventario</h1>
+                </header>
+
+                <div class="form-group">
+                    <input type="text" id="inventorySearch" placeholder="🔍 Buscar por nombre, marca o categoría..." class="form-control" onkeyup="searchInventory()">
+                </div>
+
+                <div class="table-responsive card">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Producto</th>
+                                <th>Stock</th>
+                                <th>Costo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inventoryTable">
+                            <tr><td colspan="4" class="empty-state">Cargando...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- CUSTOMER SCREEN -->
+            <section id="customer" class="screen">
+                <header class="page-header">
+                    <h1>Gestión de Clientes</h1>
+                </header>
+
+                <!-- Add Customer Form -->
+                <div class="card">
+                    <h3>➕ Agregar Cliente</h3>
+                    <form id="customerForm" onsubmit="addCustomer(event)">
+                        <div class="form-group">
+                            <label>Nombre Completo *</label>
+                            <input type="text" id="customerNameInput" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Email *</label>
+                            <input type="email" id="customerEmailInput" class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label>RFC</label>
+                            <input type="text" id="customerRFC" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Uso de CFDI *</label>
+                            <select id="customerCFDI" class="form-control" required>
+                                <option value="">Seleccionar...</option>
+                                <option value="G03">G03 (General)</option>
+                                <option value="G01">G01 (Para negocio / actividad empresarial)</option>
+                                <option value="G02">G02 (Compras para vender)</option>
+                                <option value="S01">S01 (Uso personal / no deducible)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Teléfono</label>
+                            <input type="tel" id="customerPhone" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Dirección</label>
+                            <input type="text" id="customerAddress" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Ciudad</label>
+                            <input type="text" id="customerCity" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Estado</label>
+                            <input type="text" id="customerState" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label>Código Postal</label>
+                            <input type="text" id="customerPostal" class="form-control">
+                        </div>
+                        <button type="submit" class="btn-primary btn-large">
+                            <i class="fas fa-save"></i> Guardar Cliente
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Send Welcome Email Form -->
+                <div class="card">
+                    <h3>📧 Enviar Formulario de Registro</h3>
+                    <form id="welcomeEmailForm" onsubmit="sendWelcomeEmail(event)">
+                        <div class="form-group">
+                            <label>Email del Cliente *</label>
+                            <input type="email" id="welcomeEmailInput" class="form-control" required placeholder="email@example.com">
+                        </div>
+                        <button type="submit" class="btn-primary btn-large">
+                            <i class="fas fa-envelope"></i> Enviar Bienvenida
+                        </button>
+                    </form>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Restock Modal -->
+    <div id="restockModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Reabastecer Producto</h2>
+                <button class="close-btn" onclick="closeRestockModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p id="restockProductName"></p>
+                <div class="form-group">
+                    <label>Cantidad a Agregar *</label>
+                    <input type="number" id="restockQuantity" class="form-control" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label>Costo Unitario (opcional)</label>
+                    <input type="number" id="restockCost" class="form-control" step="0.01" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="closeRestockModal()">Cancelar</button>
+                <button class="btn-primary" onclick="confirmRestock()">Confirmar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sale Confirmation Modal -->
+    <div id="saleModal" class="modal" style="display:none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✅ ¡Venta Completada!</h2>
+                <button class="close-btn" onclick="closeSaleModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="success-icon">✨</div>
+                <p id="saleMessage"></p>
+                <div class="sale-details">
+                    <div class="detail-row">
+                        <span>Factura:</span>
+                        <span id="invoiceNumber"></span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Total:</span>
+                        <span id="saleTotal"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="downloadPDF()">
+                    <i class="fas fa-download"></i> Descargar PDF
+                </button>
+                <button class="btn-secondary" onclick="shareWhatsApp()">
+                    <i class="fab fa-whatsapp"></i> WhatsApp
+                </button>
+                <button class="btn-primary" onclick="sendInvoiceEmail()">
+                    <i class="fas fa-envelope"></i> Enviar Email
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div id="loadingOverlay" class="loading-overlay" style="display:none;">
+        <div class="spinner"></div>
+        <p>Procesando...</p>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
