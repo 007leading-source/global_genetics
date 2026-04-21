@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Partner - Global Genetics MX</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e3a5f;
+            --accent: #22c55e;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #0f172a;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            background: var(--card);
+            padding: 40px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.05);
+            width: 100%;
+            max-width: 500px;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: var(--primary);
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .header p {
+            color: #64748b;
+            font-size: 14px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #475569;
+        }
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 15px;
+            box-sizing: border-box;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus {
+            border-color: var(--accent);
+        }
+        button {
+            width: 100%;
+            padding: 14px;
+            background-color: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: opacity 0.2s;
+            margin-top: 10px;
+        }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #94a3b8;
+        }
+        #message {
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+            font-size: 14px;
+            text-align: center;
+        }
+        .error { background: #fee2e2; color: #b91c1c; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Global Genetics MX</h1>
+            <p>Registro de Partner Oficial</p>
+        </div>
+
+        <div id="message"></div>
+
+        <form id="registerForm">
+            <div class="form-group">
+                <label>Nombre Completo *</label>
+                <input type="text" id="name" required placeholder="Ej. Juan Pérez">
+            </div>
+            <div class="form-group">
+                <label>Correo Electrónico *</label>
+                <input type="email" id="email" required placeholder="ejemplo@correo.com">
+            </div>
+            <div class="form-group">
+                <label>Teléfono</label>
+                <input type="tel" id="phone" placeholder="10 dígitos">
+            </div>
+            <div class="form-group">
+                <label>RFC</label>
+                <input type="text" id="rfc" placeholder="RFC con homoclave">
+            </div>
+            <div class="form-group">
+                <label>Uso de CFDI</label>
+                <select id="cfdi_use">
+                    <option value="G03">G03 - Gastos en general</option>
+                    <option value="G01">G01 - Adquisición de mercancías</option>
+                    <option value="S01">S01 - Sin efectos fiscales</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Dirección Completa</label>
+                <textarea id="address" rows="2" placeholder="Calle, Número, Colonia"></textarea>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px;">
+                <div class="form-group">
+                    <label>Ciudad</label>
+                    <input type="text" id="city">
+                </div>
+                <div class="form-group">
+                    <label>Código Postal</label>
+                    <input type="text" id="postal_code">
+                </div>
+            </div>
+            <button type="submit" id="submitBtn">Enviar Registro</button>
+        </form>
+
+        <div class="footer">
+            &copy; 2026 Global Genetics MX. Todos los derechos reservados.
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://evpqdpcelmsrptqkvmhj.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_dxwKtN8SWAELwdtyHaDGWw___xkaGui';
+        const supabase = lib.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const form = document.getElementById('registerForm');
+        const btn = document.getElementById('submitBtn');
+        const msg = document.getElementById('message');
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            btn.disabled = true;
+            btn.innerText = 'Procesando...';
+            msg.style.display = 'none';
+
+            const payload = {
+                name: document.getElementById('name').value,
+                email: document.getElementById('email').value,
+                phone: document.getElementById('phone').value,
+                rfc: document.getElementById('rfc').value,
+                cfdi_use: document.getElementById('cfdi_use').value,
+                address: document.getElementById('address').value,
+                city: document.getElementById('city').value,
+                postal_code: document.getElementById('postal_code').value
+            };
+
+            try {
+                const { error } = await supabase.from('customers').insert([payload]);
+                if (error) throw error;
+                
+                window.location.href = 'thankyou.html';
+            } catch (err) {
+                console.error(err);
+                msg.innerText = 'Error al enviar: ' + (err.message || 'Intente de nuevo');
+                msg.className = 'error';
+                msg.style.display = 'block';
+                btn.disabled = false;
+                btn.innerText = 'Enviar Registro';
+            }
+        });
+    </script>
+</body>
+</html>
